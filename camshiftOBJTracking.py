@@ -57,11 +57,12 @@ def camshiftOBJTracking():
         # 裁剪图像
         x, y, w, h = roi
         frame = frame[y:y + h, x:x + w]
-
+        
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)  # 将BGR转换为HSV空间
+        mask = cv2.inRange(hsv, np.array((0., 30., 10.)), np.array((180., 256., 255.)))  # 制作掩模版
+        
         # 表示已捕获跟踪对象
         if trackObject != 0:
-            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)  # 将BGR转换为HSV空间
-            mask = cv2.inRange(hsv, np.array((0., 30., 10.)), np.array((180., 256., 255.)))  # 制作掩模版
             if trackObject == -1:
                 track_window = (xs, ys, ws, hs)
                 mask_roi = mask[ys:ys + hs, xs:xs + ws]
