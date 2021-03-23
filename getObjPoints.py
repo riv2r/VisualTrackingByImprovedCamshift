@@ -3,9 +3,9 @@ import numpy as np
 
 def getObjPoints():
     # 调用相机标定参数
-    mtx = np.loadtxt('mtx.txt', delimiter=',')
+    mtx = np.loadtxt('cameraArgs/mtx.txt', delimiter=',')
     # 图像点与时间读取
-    ImgPoints = np.loadtxt('ImgPoints.txt', delimiter=',')
+    ImgPoints = np.loadtxt('data/ImgPoints.txt', delimiter=',')
     # 获取图像点
     imgp = ImgPoints[:, :2]
     # 设置距离参数s
@@ -27,7 +27,7 @@ def getObjPoints():
     y = objp[:, 1]
     t = ImgPoints[:, 2].reshape(-1, 1)
     ObjPoints = np.hstack((x, y, t))
-    np.savetxt('ObjPoints.txt', ObjPoints, fmt='%f', delimiter=',')
+    np.savetxt('data/ObjPoints.txt', ObjPoints, fmt='%f', delimiter=',')
 
 
 if __name__ == '__main__':

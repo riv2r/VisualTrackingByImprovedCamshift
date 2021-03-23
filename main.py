@@ -1,7 +1,7 @@
 import os
 from cameraCalib import *
 
-if os.path.exists('mtx.txt') and os.path.exists('dist.txt'):
+if os.path.exists('cameraArgs/mtx.txt') and os.path.exists('cameraArgs/dist.txt'):
     pass
 else:
     cameraCalib()
@@ -9,7 +9,7 @@ else:
 from camshiftOBJTracking import *
 from getImgPoints import *
 
-if os.path.exists('ImgPoints.txt'):
+if os.path.exists('data/ImgPoints.txt'):
     pass
 else:
     trackPath = camshiftOBJTracking()
@@ -17,15 +17,15 @@ else:
 
 from getObjPoints import *
 
-if os.path.exists('ObjPoints.txt'):
+if os.path.exists('data/ObjPoints.txt'):
     pass
 else:
     getObjPoints()
 
 import matplotlib.pyplot as plt
 
-ImgPoints = np.loadtxt('ImgPoints.txt', delimiter=',')
-ObjPoints = np.loadtxt('ObjPoints.txt', delimiter=',')
+ImgPoints = np.loadtxt('data/ImgPoints.txt', delimiter=',')
+ObjPoints = np.loadtxt('data/ObjPoints.txt', delimiter=',')
 t = ImgPoints[:, 2]
 u = ImgPoints[:, 0]
 v = ImgPoints[:, 1]

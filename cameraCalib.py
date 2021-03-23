@@ -14,7 +14,7 @@ def cameraCalib():
     # 用于存储所有图像的对象点和图像点的数组。
     objpoints = []  # 真实世界中的3d点
     imgpoints = []  # 图像中的2d点
-    images = glob.glob('calibPic\*.jpg')
+    images = glob.glob('calibPics/*.jpg')
     for fname in images:
         img = cv2.imread(fname)
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -43,8 +43,8 @@ def cameraCalib():
     print("tvecs : \n")
     print(tvecs)
     '''
-    np.savetxt('mtx.txt', mtx, fmt='%f', delimiter=',')
-    np.savetxt('dist.txt', dist, fmt='%f', delimiter=',')
+    np.savetxt('cameraArgs/mtx.txt', mtx, fmt='%f', delimiter=',')
+    np.savetxt('cameraArgs/dist.txt', dist, fmt='%f', delimiter=',')
 
 
 if __name__ == '__main__':

@@ -3,8 +3,8 @@ import numpy as np
 import time
 
 # 调用相机标定参数
-mtx = np.loadtxt('mtx.txt', delimiter=',')
-dist = np.loadtxt('dist.txt', delimiter=',')
+mtx = np.loadtxt('cameraArgs/mtx.txt', delimiter=',')
+dist = np.loadtxt('cameraArgs/dist.txt', delimiter=',')
 
 # 初始化全局变量
 xs, ys, ws, hs = 0, 0, 0, 0  # 初始化鼠标选取区域左上角坐标和长宽
