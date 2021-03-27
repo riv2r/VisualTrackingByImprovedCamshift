@@ -12,7 +12,15 @@ xo, yo = 0, 0  # 初始化左上角原始坐标
 selectObject = False  # 标记是否选取了目标
 trackObject = 0  # 1 表示有追踪对象 0 表示无追踪对象 -1 表示追踪对象尚未计算 Camshift 所需的属性
 trackPath = []  # 轨迹路径列表
+predictTrackPath= [] # 预测路径列表
 
+# kalman滤波器初始化
+kalman = cv2.KalmanFilter(4, 2) # 4 状态数 包括(x,y,dx,dy)坐标及速度(每次移动的距离) 2 观测量 能看到的是坐标值
+kalman.measurementMatrix = np.array([[1, 0, 0, 0], [0, 1, 0, 0]], np.float32) # 系统测量矩阵
+kalman.transitionMatrix = np.array([[1, 0, 1, 0], [0, 1, 0, 1], [0, 0, 1, 0], [0, 0, 0, 1]], np.float32) # 状态转移矩阵
+kalman.processNoiseCov = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], np.float32)*0.03 # 系统过程噪声协方差
+last_measurement = current_measurement = np.array((2, 1), np.float32)
+last_prediction = current_prediction = np.zeros((2, 1), np.float32)
 
 # 鼠标回调函数
 def onMouse(event, x, y, flags, prams):
@@ -38,8 +46,8 @@ def onMouse(event, x, y, flags, prams):
 
 
 # 处理算法函数
-def camshiftOBJTracking():
-    global xs, ys, ws, hs, selectObject, xo, yo, trackObject, trackPath
+def OBJTracking():
+    global xs, ys, ws, hs, selectObject, xo, yo, trackObject, trackPath, last_measurement, last_prediction, current_measurement, current_prediction
 
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)  # 捕获摄像头
     cv2.namedWindow('CamshiftOBJTracking')
@@ -79,16 +87,26 @@ def camshiftOBJTracking():
             ret, track_window = cv2.CamShift(dst, track_window, term_crit)
 
             x, y, w, h = track_window
+            # 插入卡尔曼滤波算法
+            last_prediction = current_prediction # 把当前预测存储为上一次预测
+            last_measurement = current_measurement # 把当前测量存储为上一次测量
+            current_measurement = np.array([[np.float32(x+w//2)], [np.float32(y+h//2)]]) # 当前测量
+            kalman.correct(current_measurement) # 用当前测量来校正卡尔曼滤波器
+            current_prediction = kalman.predict() # 计算卡尔曼预测值，作为当前预测
+            cmx, cmy = int(current_measurement[0]), int(current_measurement[1]) # 当前测量坐标
+            cpx, cpy = int(current_prediction[0]), int(current_prediction[1]) # 当前预测坐标
+
             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
             # 记录时间
             now = time.time()
-            trackPath.append([x + w // 2, y + h // 2, now])
+            trackPath.append([cmx, cmy, now])
+            predictTrackPath.append([cpx, cpy, now])
 
-            for i in range(1, len(trackPath)):
-                cv2.line(frame, (trackPath[i - 1][0], trackPath[i - 1][1]), (trackPath[i][0], trackPath[i][1]),
-                         (0, 255, 0),
-                         2)
-
+            for i in range(21, len(trackPath)):
+                cv2.line(frame, (trackPath[i - 1][0], trackPath[i - 1][1]), (trackPath[i][0], trackPath[i][1]), (0, 255, 0), 2)
+            for i in range(21, len(predictTrackPath)):
+                cv2.line(frame, (predictTrackPath[i - 1][0], predictTrackPath[i - 1][1]), (predictTrackPath[i][0], predictTrackPath[i][1]), (255, 0, 0), 2)
+        
         if selectObject and ws > 0 and hs > 0:
             cv2.bitwise_not(frame[ys:ys + hs, xs:xs + ws], frame[ys:ys + hs, xs:xs + ws])
 
@@ -104,4 +122,4 @@ def camshiftOBJTracking():
 
 
 if __name__ == '__main__':
-    camshiftOBJTracking()
+    OBJTracking()

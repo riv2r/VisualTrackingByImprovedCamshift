@@ -6,13 +6,13 @@ if os.path.exists('cameraArgs/mtx.txt') and os.path.exists('cameraArgs/dist.txt'
 else:
     cameraCalib()
 
-from camshiftOBJTracking import *
+from OBJTracking import *
 from getImgPoints import *
 
 if os.path.exists('data/ImgPoints.txt'):
     pass
 else:
-    trackPath = camshiftOBJTracking()
+    trackPath = OBJTracking()
     getImgPoints(trackPath)
 
 from getObjPoints import *
