@@ -75,6 +75,8 @@ def OBJTracking():
     cv2.setMouseCallback('CamshiftOBJTracking', onMouse)
     # 设置结束标志，10 次迭代或至少 1 次移动
     term_crit = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 1)
+    # 采用KNN背景分割
+    backSub = cv2.createBackgroundSubtractorKNN()
 
     while (True):
         # 连续读取视频帧
@@ -104,6 +106,10 @@ def OBJTracking():
                 # 归一化处理
                 cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
                 trackObject = 1
+            # 背景分割
+            fgMask = backSub.apply(frame)
+            frame = cv2.bitwise_and(frame, frame, mask = fgMask)
+            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
             # 反向投影
             backProj = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
             backProj &= mask
