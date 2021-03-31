@@ -108,8 +108,8 @@ def OBJTracking():
                 trackObject = 1
             # 背景分割
             fgMask = backSub.apply(frame)
-            frame = cv2.bitwise_and(frame, frame, mask = fgMask)
-            hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+            backSubFrame = cv2.bitwise_and(frame, frame, mask = fgMask)
+            hsv = cv2.cvtColor(backSubFrame, cv2.COLOR_BGR2HSV)
             # 反向投影
             backProj = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
             backProj &= mask
