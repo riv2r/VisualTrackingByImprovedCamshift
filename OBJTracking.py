@@ -99,19 +99,19 @@ def OBJTracking():
             # 计算camshift所需属性
             if trackObject == -1:
                 track_window = (xs, ys, ws, hs)
-                mask_roi = mask[ys:ys + hs, xs:xs + ws]
-                hsv_roi = hsv[ys:ys + hs, xs:xs + ws]
+                roi_mask = mask[ys:ys + hs, xs:xs + ws]
+                roi_hsv = hsv[ys:ys + hs, xs:xs + ws]
                 # 构建图像分布直方图
-                roi_hist = cv2.calcHist([hsv_roi], [0], mask_roi, [180], [0, 180])
+                roi_hist = cv2.calcHist([roi_hsv], [0], roi_mask, [180], [0, 180])
                 # 归一化处理
                 cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
                 trackObject = 1
-            # 背景分割
+            # 制作背景分割掩模版 并应用于当前帧
             fgMask = backSub.apply(frame)
             backSubFrame = cv2.bitwise_and(frame, frame, mask = fgMask)
-            hsv = cv2.cvtColor(backSubFrame, cv2.COLOR_BGR2HSV)
+            backSubHsv = cv2.cvtColor(backSubFrame, cv2.COLOR_BGR2HSV)
             # 反向投影
-            backProj = cv2.calcBackProject([hsv], [0], roi_hist, [0, 180], 1)
+            backProj = cv2.calcBackProject([backSubHsv], [0], roi_hist, [0, 180], 1)
             backProj &= mask
 
             # 调用CAMshift算法
