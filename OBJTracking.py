@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import time
 
+from numpy.random import gamma
+
 # 调用相机标定参数
 mtx = np.loadtxt('cameraArgs/mtx.txt', delimiter=',')
 dist = np.loadtxt('cameraArgs/dist.txt', delimiter=',')
@@ -89,10 +91,18 @@ def OBJTracking():
         # 裁剪图像
         x, y, w, h = roi
         frame = frame[y:y + h, x:x + w]
+        # 镜像视频帧
+        frame = cv2.flip(frame, 90)
         # 将BGR转换为HSV空间
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         # 制作掩模版
         mask = cv2.inRange(hsv, np.array((0., 43., 46.)), np.array((180., 255., 255.)))
+        # 增强对比度
+        b, g, r = cv2.split(frame)
+        b1 = cv2.equalizeHist(b)
+        g1 = cv2.equalizeHist(g)
+        r1 = cv2.equalizeHist(r)
+        frame = cv2.merge([b1, g1, r1])
 
         # 表示已捕获跟踪对象
         if trackObject != 0:
