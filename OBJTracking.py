@@ -84,7 +84,8 @@ def OBJTracking():
         # 连续读取视频帧
         ret, frame = cap.read()
         originFrame_h, originFrame_w = frame.shape[:2]
-        newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (originFrame_w, originFrame_h), 1, (originFrame_w, originFrame_h))
+        newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (originFrame_w, originFrame_h), 1,
+                                                          (originFrame_w, originFrame_h))
         # 校准图像
         mapx, mapy = cv2.initUndistortRectifyMap(mtx, dist, None, newcameramtx, (originFrame_w, originFrame_h), 5)
         frame = cv2.remap(frame, mapx, mapy, cv2.INTER_LINEAR)
@@ -135,7 +136,7 @@ def OBJTracking():
             '''
             # 制作背景分割掩模版 并应用于当前帧
             fgMask = backSub.apply(frame)
-            backSubFrame = cv2.bitwise_and(frame, frame, mask = fgMask)
+            backSubFrame = cv2.bitwise_and(frame, frame, mask=fgMask)
             '''
             # 显示分割背景后的视频帧
             cv2.imshow('test',backSubFrame)
@@ -144,7 +145,7 @@ def OBJTracking():
             # 反向投影
             backProj = cv2.calcBackProject([backSubHsv], [0], roi_hist, [0, 180], 1)
             backProj &= mask
-            
+
             # 根据匹配分数 选择跟踪方式
             if matchScore <= 0.9:
                 # 调用CAMshift算法
