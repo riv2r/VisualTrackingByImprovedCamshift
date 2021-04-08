@@ -83,14 +83,14 @@ def OBJTracking():
     while (True):
         # 连续读取视频帧
         ret, frame = cap.read()
-        h, w = frame.shape[:2]
-        newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (w, h), 1, (w, h))
+        originFrame_h, originFrame_w = frame.shape[:2]
+        newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (originFrame_w, originFrame_h), 1, (originFrame_w, originFrame_h))
         # 校准图像
         mapx, mapy = cv2.initUndistortRectifyMap(mtx, dist, None, newcameramtx, (w, h), 5)
         frame = cv2.remap(frame, mapx, mapy, cv2.INTER_LINEAR)
         # 裁剪图像
-        x, y, w, h = roi
-        frame = frame[y:y + h, x:x + w]
+        reshape_x, reshape_y, reshape_w, reshape_h = roi
+        frame = frame[reshape_y:reshape_y + reshape_h, reshape_x:reshape_x + reshape_w]
         # 镜像视频帧
         frame = cv2.flip(frame, 90)
         # 将BGR转换为HSV空间
@@ -117,15 +117,15 @@ def OBJTracking():
                 roi_hist = cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
                 trackObject = 1
             # 计算当前捕捉框属性
-            x, y, w, h = track_window
-            window_mask = mask[y:y + h, x:x + w]
-            window_hsv = hsv[y:y + h, x:x + w]
+            win_x, win_y, win_w, win_h = track_window
+            win_mask = mask[win_y:win_y + win_h, win_x:win_x + win_w]
+            win_hsv = hsv[win_y:win_y + win_h, win_x:win_x + win_w]
             # 构建捕捉框图像分布直方图
-            window_hist = cv2.calcHist([window_hsv], [0], window_mask, [180], [0, 180])
+            win_hist = cv2.calcHist([win_hsv], [0], win_mask, [180], [0, 180])
             # 归一化处理
-            window_hist = cv2.normalize(window_hist, window_hist, 0, 255, cv2.NORM_MINMAX)
+            win_hist = cv2.normalize(win_hist, win_hist, 0, 255, cv2.NORM_MINMAX)
             # 计算匹配分数
-            matchScore = cv2.compareHist(roi_hist, window_hist, cv2.HISTCMP_BHATTACHARYYA)
+            matchScore = cv2.compareHist(roi_hist, win_hist, cv2.HISTCMP_BHATTACHARYYA)
             # 制作背景分割掩模版 并应用于当前帧
             fgMask = backSub.apply(frame)
             backSubFrame = cv2.bitwise_and(frame, frame, mask = fgMask)
