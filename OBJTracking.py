@@ -86,7 +86,7 @@ def OBJTracking():
         originFrame_h, originFrame_w = frame.shape[:2]
         newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (originFrame_w, originFrame_h), 1, (originFrame_w, originFrame_h))
         # 校准图像
-        mapx, mapy = cv2.initUndistortRectifyMap(mtx, dist, None, newcameramtx, (w, h), 5)
+        mapx, mapy = cv2.initUndistortRectifyMap(mtx, dist, None, newcameramtx, (originFrame_w, originFrame_h), 5)
         frame = cv2.remap(frame, mapx, mapy, cv2.INTER_LINEAR)
         # 裁剪图像
         reshape_x, reshape_y, reshape_w, reshape_h = roi
@@ -133,7 +133,7 @@ def OBJTracking():
             # 反向投影
             backProj = cv2.calcBackProject([backSubHsv], [0], roi_hist, [0, 180], 1)
             backProj &= mask
-
+            print(matchScore)
             # 调用CAMshift算法
             ret, track_window = cv2.CamShift(backProj, track_window, term_crit)
             x, y, w, h = track_window
