@@ -114,8 +114,18 @@ def OBJTracking():
                 # 构建图像分布直方图
                 roi_hist = cv2.calcHist([roi_hsv], [0], roi_mask, [180], [0, 180])
                 # 归一化处理
-                cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
+                roi_hist = cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
                 trackObject = 1
+            # 计算当前捕捉框属性
+            x, y, w, h = track_window
+            window_mask = mask[y:y + h, x:x + w]
+            window_hsv = hsv[y:y + h, x:x + w]
+            # 构建捕捉框图像分布直方图
+            window_hist = cv2.calcHist([window_hsv], [0], window_mask, [180], [0, 180])
+            # 归一化处理
+            window_hist = cv2.normalize(window_hist, window_hist, 0, 255, cv2.NORM_MINMAX)
+            # 计算匹配分数
+            matchScore = cv2.compareHist(roi_hist, window_hist, cv2.HISTCMP_BHATTACHARYYA)
             # 制作背景分割掩模版 并应用于当前帧
             fgMask = backSub.apply(frame)
             backSubFrame = cv2.bitwise_and(frame, frame, mask = fgMask)
