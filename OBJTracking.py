@@ -97,24 +97,27 @@ def OBJTracking():
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         # 制作掩模版
         mask = cv2.inRange(hsv, np.array((0., 43., 46.)), np.array((180., 255., 255.)))
-        # 增强对比度
+        '''
+        # 图像增强部分
         b, g, r = cv2.split(frame)
         b1 = cv2.equalizeHist(b)
         g1 = cv2.equalizeHist(g)
         r1 = cv2.equalizeHist(r)
         frame = cv2.merge([b1, g1, r1])
-
+        '''
         # 表示已捕获跟踪对象
         if trackObject != 0:
             # 计算camshift所需属性
             if trackObject == -1:
-                track_window = (xs, ys, ws, hs)
+                track_window = xs, ys, ws, hs
                 roi_mask = mask[ys:ys + hs, xs:xs + ws]
                 roi_hsv = hsv[ys:ys + hs, xs:xs + ws]
                 # 构建图像分布直方图
                 roi_hist = cv2.calcHist([roi_hsv], [0], roi_mask, [180], [0, 180])
                 # 归一化处理
                 roi_hist = cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
+                # 初始化初始坐标 防止无效预测
+                kalman.statePost[0], kalman.statePost[1] = xs + ws // 2, ys + hs // 2
                 trackObject = 1
             # 计算当前捕捉框属性
             win_x, win_y, win_w, win_h = track_window
@@ -126,27 +129,46 @@ def OBJTracking():
             win_hist = cv2.normalize(win_hist, win_hist, 0, 255, cv2.NORM_MINMAX)
             # 计算匹配分数
             matchScore = cv2.compareHist(roi_hist, win_hist, cv2.HISTCMP_BHATTACHARYYA)
+            '''
+            # 输出匹配分数
+            print(matchScore)
+            '''
             # 制作背景分割掩模版 并应用于当前帧
             fgMask = backSub.apply(frame)
             backSubFrame = cv2.bitwise_and(frame, frame, mask = fgMask)
+            '''
+            # 显示分割背景后的视频帧
+            cv2.imshow('test',backSubFrame)
+            '''
             backSubHsv = cv2.cvtColor(backSubFrame, cv2.COLOR_BGR2HSV)
             # 反向投影
             backProj = cv2.calcBackProject([backSubHsv], [0], roi_hist, [0, 180], 1)
             backProj &= mask
-            print(matchScore)
-            # 调用CAMshift算法
-            ret, track_window = cv2.CamShift(backProj, track_window, term_crit)
-            x, y, w, h = track_window
-            # 卡尔曼滤波_预测
-            statePre = kalman.predict()
-            # 卡尔曼滤波_更新
-            measurement = np.array([[x + w // 2],
-                                    [y + h // 2]], np.float32)
+            
+            # 根据匹配分数 选择跟踪方式
+            if matchScore <= 0.9:
+                # 调用CAMshift算法
+                ret, track_window = cv2.CamShift(backProj, track_window, term_crit)
+                x, y, w, h = track_window
+                # 卡尔曼滤波_预测
+                statePre = kalman.predict()
+                # 卡尔曼滤波_更新
+                measurement = np.array([[x + w // 2],
+                                        [y + h // 2]], np.float32)
+            else:
+                # 卡尔曼滤波_预测
+                statePre = kalman.predict()
+                # 卡尔曼滤波_更新
+                measurement = np.array([[statePre[0]],
+                                        [statePre[1]]], np.float32)
+            # 卡尔曼滤波_校正
             kalman.correct(measurement)
             # 获取校正后的位置坐标
             px, py = int(kalman.statePost[0]), int(kalman.statePost[1])
             # 绘制捕获方框
             cv2.rectangle(frame, (px - w // 2, py - h // 2), (px + w // 2, py + h // 2), (255, 0, 0), 2)
+            # 校正捕捉框
+            track_window = px - w // 2, py - h // 2, w, h
             # 记录时间
             now = time.time()
             trackPath.append([px, py, now])
@@ -161,7 +183,6 @@ def OBJTracking():
 
         # 显示图像
         cv2.imshow('CamshiftOBJTracking', frame)
-
         # 控制程序停止
         key = cv2.waitKey(10)
         if key == 27 or key == ord('q'):
