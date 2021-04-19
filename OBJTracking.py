@@ -4,9 +4,11 @@ import time
 
 from numpy.random import gamma
 
+'''
 # 调用相机标定参数
 mtx = np.loadtxt('cameraArgs/mtx.txt', delimiter=',')
 dist = np.loadtxt('cameraArgs/dist.txt', delimiter=',')
+'''
 
 # 初始化鼠标选取区域左上角坐标和长宽
 xs, ys, ws, hs = 0, 0, 0, 0
@@ -16,8 +18,12 @@ xo, yo = 0, 0
 selectObject = False
 # 1 表示有追踪对象 0 表示无追踪对象 -1 表示追踪对象尚未计算 Camshift 所需的属性
 trackObject = 0
-# 轨迹路径列表
-trackPath = []
+# camshift轨迹路径列表
+CMSTrackPath = []
+# 优化camshift轨迹路径列表
+ImpCMSTrackPath = []
+# 视频分辨率设置
+size = (640, 360)
 
 # kalman滤波器初始化
 # 4 状态数 包括(x,y,dx,dy)坐标及速度(每次移动的距离) 2 观测量 表示能测量到的值
@@ -46,7 +52,7 @@ kalman.errorCovPost = np.ones((4, 4), np.float32)
 
 # 鼠标回调函数
 def onMouse(event, x, y, flags, prams):
-    global xs, ys, ws, hs, selectObject, xo, yo, trackObject, trackPath
+    global xs, ys, ws, hs, selectObject, xo, yo, trackObject, CMSTrackPath, ImpCMSTrackPath
     if selectObject == True:
         xs = min(x, xo)
         ys = min(y, yo)
@@ -69,9 +75,12 @@ def onMouse(event, x, y, flags, prams):
 
 # 处理算法函数
 def OBJTracking():
-    global xs, ys, ws, hs, selectObject, xo, yo, trackObject, trackPath
+    global xs, ys, ws, hs, selectObject, xo, yo, trackObject, CMSTrackPath, ImpCMSTrackPath, size
     # 捕获摄像头
-    cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    cap = cv2.VideoCapture('video/test2.mp4')
+    fps = int(cap.get(cv2.CAP_PROP_FPS))
+    pauseTime = 1000/fps
+    # 命名播放窗口标题
     cv2.namedWindow('CamshiftOBJTracking')
     # 调用鼠标回调函数
     cv2.setMouseCallback('CamshiftOBJTracking', onMouse)
@@ -83,6 +92,9 @@ def OBJTracking():
     while (True):
         # 连续读取视频帧
         ret, frame = cap.read()
+        # 批处理视频分辨率
+        frame = cv2.resize(frame, size)
+        '''
         originFrame_h, originFrame_w = frame.shape[:2]
         newcameramtx, roi = cv2.getOptimalNewCameraMatrix(mtx, dist, (originFrame_w, originFrame_h), 1,
                                                           (originFrame_w, originFrame_h))
@@ -92,6 +104,7 @@ def OBJTracking():
         # 裁剪图像
         reshape_x, reshape_y, reshape_w, reshape_h = roi
         frame = frame[reshape_y:reshape_y + reshape_h, reshape_x:reshape_x + reshape_w]
+        '''
         # 镜像视频帧
         frame = cv2.flip(frame, 90)
         # 将BGR转换为HSV空间
@@ -147,36 +160,47 @@ def OBJTracking():
             backProj &= mask
 
             # 根据匹配分数 选择跟踪方式
-            if matchScore <= 0.9:
-                # 调用CAMshift算法
-                ret, track_window = cv2.CamShift(backProj, track_window, term_crit)
-                x, y, w, h = track_window
-                # 卡尔曼滤波_预测
-                statePre = kalman.predict()
-                # 卡尔曼滤波_更新
-                measurement = np.array([[x + w // 2],
-                                        [y + h // 2]], np.float32)
+            # if matchScore <= 1:
+            # 调用CAMshift算法
+            ret, track_window = cv2.CamShift(backProj, track_window, term_crit)
+            x, y, w, h = track_window
+            # 卡尔曼滤波_预测
+            statePre = kalman.predict()
+            # 卡尔曼滤波_更新
+            measurement = np.array([[x + w // 2],
+                                    [y + h // 2]], np.float32)
+            '''
             else:
                 # 卡尔曼滤波_预测
                 statePre = kalman.predict()
                 # 卡尔曼滤波_更新
                 measurement = np.array([[statePre[0]],
                                         [statePre[1]]], np.float32)
+            '''
             # 卡尔曼滤波_校正
             kalman.correct(measurement)
             # 获取校正后的位置坐标
             px, py = int(kalman.statePost[0]), int(kalman.statePost[1])
-            # 绘制捕获方框
-            cv2.rectangle(frame, (px - w // 2, py - h // 2), (px + w // 2, py + h // 2), (255, 0, 0), 2)
-            # 校正捕捉框
-            track_window = px - w // 2, py - h // 2, w, h
             # 记录时间
             now = time.time()
-            trackPath.append([px, py, now])
-
-            for i in range(1, len(trackPath)):
-                cv2.line(frame, (trackPath[i - 1][0], trackPath[i - 1][1]), (trackPath[i][0], trackPath[i][1]),
-                         (0, 255, 0), 2)
+            # 绘制camshift捕获方框
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+            # 绘制优化camshift捕获方框
+            cv2.rectangle(frame, (px - w // 2, py - h // 2), (px + w // 2, py + h // 2), (255, 0, 0), 4)
+            '''
+            # 校正捕捉框
+            track_window = px - w // 2, py - h // 2, w, h
+            '''
+            # camshift路径列表更新
+            CMSTrackPath.append([x + w // 2, y + h // 2,now])
+            # 优化camshift路径列表更新
+            ImpCMSTrackPath.append([px, py, now])
+            # camshift轨迹绘制
+            for i in range(1, len(CMSTrackPath)):
+                cv2.line(frame, (CMSTrackPath[i - 1][0], CMSTrackPath[i - 1][1]), (CMSTrackPath[i][0], CMSTrackPath[i][1]), (0, 255, 0), 2)
+            # 优化camshift轨迹绘制
+            for i in range(1, len(ImpCMSTrackPath)):
+                cv2.line(frame, (ImpCMSTrackPath[i - 1][0], ImpCMSTrackPath[i - 1][1]), (ImpCMSTrackPath[i][0], ImpCMSTrackPath[i][1]), (0, 255, 0), 4)
 
         # 显示鼠标选择区域
         if selectObject and ws > 0 and hs > 0:
@@ -184,14 +208,18 @@ def OBJTracking():
 
         # 显示图像
         cv2.imshow('CamshiftOBJTracking', frame)
+        # 表示尚未初始化跟踪对象
+        if trackObject == 0:
+            # 暂停等待选取跟踪框
+            cv2.waitKey(0)
         # 控制程序停止
-        key = cv2.waitKey(10)
-        if key == 27 or key == ord('q'):
+        key = cv2.waitKey(int(pauseTime))
+        if key == 27:
             break
 
     cv2.destroyAllWindows()
     cap.release()
-    return trackPath
+    return ImpCMSTrackPath
 
 
 if __name__ == '__main__':
