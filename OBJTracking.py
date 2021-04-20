@@ -77,7 +77,7 @@ def onMouse(event, x, y, flags, prams):
 def OBJTracking():
     global xs, ys, ws, hs, selectObject, xo, yo, trackObject, CMSTrackPath, ImpCMSTrackPath, size
     # 捕获摄像头
-    cap = cv2.VideoCapture('video/test2.mp4')
+    cap = cv2.VideoCapture('video/test1.mp4')
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     pauseTime = 1000/fps
     # 命名播放窗口标题
@@ -106,7 +106,7 @@ def OBJTracking():
         frame = frame[reshape_y:reshape_y + reshape_h, reshape_x:reshape_x + reshape_w]
         '''
         # 镜像视频帧
-        frame = cv2.flip(frame, 90)
+        # frame = cv2.flip(frame, 90)
         # 将BGR转换为HSV空间
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         # 制作掩模版
@@ -186,7 +186,7 @@ def OBJTracking():
             # 绘制camshift捕获方框
             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
             # 绘制优化camshift捕获方框
-            cv2.rectangle(frame, (px - w // 2, py - h // 2), (px + w // 2, py + h // 2), (255, 0, 0), 4)
+            cv2.rectangle(frame, (px - w // 2, py - h // 2), (px + w // 2, py + h // 2), (0, 0, 255), 2)
             '''
             # 校正捕捉框
             track_window = px - w // 2, py - h // 2, w, h
@@ -200,8 +200,7 @@ def OBJTracking():
                 cv2.line(frame, (CMSTrackPath[i - 1][0], CMSTrackPath[i - 1][1]), (CMSTrackPath[i][0], CMSTrackPath[i][1]), (0, 255, 0), 2)
             # 优化camshift轨迹绘制
             for i in range(1, len(ImpCMSTrackPath)):
-                cv2.line(frame, (ImpCMSTrackPath[i - 1][0], ImpCMSTrackPath[i - 1][1]), (ImpCMSTrackPath[i][0], ImpCMSTrackPath[i][1]), (0, 255, 0), 4)
-
+                cv2.line(frame, (ImpCMSTrackPath[i - 1][0], ImpCMSTrackPath[i - 1][1]), (ImpCMSTrackPath[i][0], ImpCMSTrackPath[i][1]), (0, 255, 255), 2)
         # 显示鼠标选择区域
         if selectObject and ws > 0 and hs > 0:
             cv2.bitwise_not(frame[ys:ys + hs, xs:xs + ws], frame[ys:ys + hs, xs:xs + ws])
