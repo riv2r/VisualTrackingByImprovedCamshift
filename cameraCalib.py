@@ -1,11 +1,12 @@
 import numpy as np
 import cv2
 import glob
-
+import os
+from collectPics import *
 
 def cameraCalib():
     # 棋盘大小
-    CHECKERBOARD = (7, 6)
+    CHECKERBOARD = (7, 7)
     # 迭代终止条件
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
     # 准备对象点
@@ -14,6 +15,11 @@ def cameraCalib():
     # 用于存储所有图像的对象点和图像点的数组。
     objpoints = []  # 真实世界中的3d点
     imgpoints = []  # 图像中的2d点
+    # 检查标定素材数量
+    num=len([lists for lists in os.listdir('calibPics') if os.path.isfile(os.path.join('calibPics', lists))])
+    # 数量少于10 增加素材
+    if num < 10:
+        collectPics(num)
     images = glob.glob('calibPics/*.jpg')
     for fname in images:
         img = cv2.imread(fname)
@@ -27,8 +33,8 @@ def cameraCalib():
             imgpoints.append(corners2)
             # 绘制并显示拐角
             img = cv2.drawChessboardCorners(img, CHECKERBOARD, corners2, ret)
-        # cv2.imshow('img', img)
-        # cv2.waitKey(0)
+        cv2.imshow('img', img)
+        cv2.waitKey(0)
 
     cv2.destroyAllWindows()
 
