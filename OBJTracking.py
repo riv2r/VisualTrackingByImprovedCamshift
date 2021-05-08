@@ -23,7 +23,7 @@ CMSTrackPath = []
 # 优化camshift轨迹路径列表
 ImpCMSTrackPath = []
 # 视频分辨率设置
-size = (640, 360)
+size = (640, 480)
 
 # kalman滤波器初始化
 # 4 状态数 包括(x,y,dx,dy)坐标及速度(每次移动的距离) 2 观测量 表示能测量到的值
@@ -77,7 +77,7 @@ def onMouse(event, x, y, flags, prams):
 def OBJTracking():
     global xs, ys, ws, hs, selectObject, xo, yo, trackObject, CMSTrackPath, ImpCMSTrackPath, size
     # 捕获摄像头
-    cap = cv2.VideoCapture('video/test1.mp4')
+    cap = cv2.VideoCapture('video/test.mp4')
     fps = int(cap.get(cv2.CAP_PROP_FPS))
     pauseTime = 1000/fps
     # 命名播放窗口标题
