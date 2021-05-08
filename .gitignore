@@ -3,3 +3,5 @@
 /video/
 /chessboard/
 /calibPics/
+/.vscode/
+/__pycache__/
