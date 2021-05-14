@@ -43,7 +43,7 @@ kalman.transitionMatrix = np.array([[1, 0, 1, 0],
 kalman.processNoiseCov = np.array([[1, 0, 0, 0],
                                    [0, 1, 0, 0],
                                    [0, 0, 1, 0],
-                                   [0, 0, 0, 1]], np.float32) * 1e-1
+                                   [0, 0, 0, 1]], np.float32) * 0.025
 # 测量矩阵H
 kalman.measurementMatrix = np.array([[1, 0, 0, 0],
                                      [0, 1, 0, 0]], np.float32)
@@ -236,20 +236,8 @@ def OBJTracking():
 
     cv2.destroyAllWindows()
     cap.release()
-    return CMSTrackPath
-
-
-def KalmanFilterProcess():
-    global CMSTrackPath, ImpCMSTrackPath, kalman
-    CMSTrackPath = np.mat(CMSTrackPath).reshape(-1, 3)
-    CMSTrackPath[:, 2] = CMSTrackPath[:, 2] - CMSTrackPath[0, 2]
-    ImpCMSTrackPath = np.mat(ImpCMSTrackPath).reshape(-1, 3)
-    ImpCMSTrackPath[:, 2] = ImpCMSTrackPath[:, 2] - ImpCMSTrackPath[0, 2]
-    plt.plot(CMSTrackPath[:,0],-CMSTrackPath[:,1])
-    plt.plot(ImpCMSTrackPath[:,0],-ImpCMSTrackPath[:,1])
-    plt.show()
+    return ImpCMSTrackPath
 
 
 if __name__ == '__main__':
     OBJTracking()
-    KalmanFilterProcess()
