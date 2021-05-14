@@ -43,7 +43,7 @@ kalman.transitionMatrix = np.array([[1, 0, 1, 0],
 kalman.processNoiseCov = np.array([[1, 0, 0, 0],
                                    [0, 1, 0, 0],
                                    [0, 0, 1, 0],
-                                   [0, 0, 0, 1]], np.float32) * 1e-5
+                                   [0, 0, 0, 1]], np.float32) * 1e-1
 # 测量矩阵H
 kalman.measurementMatrix = np.array([[1, 0, 0, 0],
                                      [0, 1, 0, 0]], np.float32)
@@ -58,7 +58,7 @@ kalman.errorCovPost = np.ones((4, 4), np.float32)
 
 # 鼠标回调函数
 def onMouse(event, x, y, flags, prams):
-    global xs, ys, ws, hs, selectObject, xo, yo, trackObject, CMSTrackPath
+    global xs, ys, ws, hs, selectObject, xo, yo, trackObject, CMSTrackPath, ImpCMSTrackPath
     if selectObject == True:
         xs = min(x, xo)
         ys = min(y, yo)
@@ -77,6 +77,7 @@ def onMouse(event, x, y, flags, prams):
         selectObject = False
         trackObject = 0
         CMSTrackPath = []
+        ImpCMSTrackPath = []
 
 
 # 目标颜色分布直方图绘制函数
@@ -93,7 +94,7 @@ def DrawROIColorHist(hist):
 
 # 处理算法函数
 def OBJTracking():
-    global xs, ys, ws, hs, selectObject, xo, yo, trackObject, CMSTrackPath, size
+    global xs, ys, ws, hs, selectObject, xo, yo, trackObject, CMSTrackPath, ImpCMSTrackPath, kalman, size
     # 捕获摄像头
     cap = cv2.VideoCapture('video/test.mp4')
     fps = int(cap.get(cv2.CAP_PROP_FPS))
@@ -154,6 +155,7 @@ def OBJTracking():
                 roi_hist = cv2.calcHist([roi_hsv], [0], roi_mask, [180], [0, 180])
                 # 归一化处理
                 roi_hist = cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
+                kalman.statePost[0], kalman.statePost[1] = xs + ws // 2, ys + hs // 2
                 # DrawROIColorHist(roi_hist)
                 trackObject = 1
             #region 遮挡判定
@@ -190,15 +192,32 @@ def OBJTracking():
             
             # 记录时间
             now = time.time()
-            # 绘制camshift捕获方框
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-            
             # camshift路径列表更新
             CMSTrackPath.append([x + w // 2, y + h // 2,now])
-            
+
+            # 卡尔曼滤波_预测
+            statePre = kalman.predict()
+            # 卡尔曼滤波_更新
+            measurement = np.array([[x + w // 2],
+                                    [y + h // 2]], np.float32)
+            # 卡尔曼滤波_校正
+            kalman.correct(measurement)
+            # 获取校正后的位置坐标
+            px, py = int(kalman.statePost[0]), int(kalman.statePost[1])
+            # 优化camshift路径列表更新
+            ImpCMSTrackPath.append([px, py, now])
+
+            # 绘制camshift捕获方框
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
             # camshift轨迹绘制
             for i in range(1, len(CMSTrackPath)):
                 cv2.line(frame, (CMSTrackPath[i - 1][0], CMSTrackPath[i - 1][1]), (CMSTrackPath[i][0], CMSTrackPath[i][1]), (0, 255, 0), 2)
+
+            # 绘制优化camshift捕获方框
+            cv2.rectangle(frame, (px - w//2, py - h//2), (px + w//2, py + h//2), (0, 0, 255), 2)
+            # 优化camshift轨迹绘制
+            for i in range(1, len(ImpCMSTrackPath)):
+                cv2.line(frame, (ImpCMSTrackPath[i - 1][0], ImpCMSTrackPath[i - 1][1]), (ImpCMSTrackPath[i][0], ImpCMSTrackPath[i][1]), (0, 255, 255), 2)
             
         # 显示鼠标选择区域
         if selectObject and ws > 0 and hs > 0:
@@ -222,20 +241,6 @@ def OBJTracking():
 
 def KalmanFilterProcess():
     global CMSTrackPath, ImpCMSTrackPath, kalman
-    kalman.statePost[0], kalman.statePost[1] = CMSTrackPath[0][0], CMSTrackPath[0][1]
-    ImpCMSTrackPath.append(CMSTrackPath[0])
-    for i in range(len(CMSTrackPath)):
-        # 卡尔曼滤波_预测
-        statePre = kalman.predict()
-        # 卡尔曼滤波_更新
-        measurement = np.array([[CMSTrackPath[i][0]],
-                                [CMSTrackPath[i][1]]], np.float32)
-        # 卡尔曼滤波_校正
-        kalman.correct(measurement)
-        # 获取校正后的位置坐标
-        px, py = int(kalman.statePost[0]), int(kalman.statePost[1])
-        # 优化camshift路径列表更新
-        ImpCMSTrackPath.append([px, py, CMSTrackPath[i][2]])
     CMSTrackPath = np.mat(CMSTrackPath).reshape(-1, 3)
     CMSTrackPath[:, 2] = CMSTrackPath[:, 2] - CMSTrackPath[0, 2]
     ImpCMSTrackPath = np.mat(ImpCMSTrackPath).reshape(-1, 3)
