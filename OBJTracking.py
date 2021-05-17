@@ -97,8 +97,9 @@ def OBJTracking():
     global xs, ys, ws, hs, selectObject, xo, yo, trackObject, CMSTrackPath, ImpCMSTrackPath, kalman, size
     # 捕获摄像头
     cap = cv2.VideoCapture('video/test.mp4')
-    fps = int(cap.get(cv2.CAP_PROP_FPS))
-    pauseTime = 1000/fps
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    frameSum = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+    pauseTime = frameSum/fps
     # 命名播放窗口标题
     cv2.namedWindow('CamshiftOBJTracking')
     # 调用鼠标回调函数
