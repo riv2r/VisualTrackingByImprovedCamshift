@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 from pylab import mpl
-import time
 
 
 # 设置中文显示
@@ -95,11 +94,13 @@ def DrawROIColorHist(hist):
 # 处理算法函数
 def OBJTracking():
     global xs, ys, ws, hs, selectObject, xo, yo, trackObject, CMSTrackPath, ImpCMSTrackPath, kalman, size
-    # 捕获摄像头
+    # 捕获摄像头和相关属性
     cap = cv2.VideoCapture('video/test.mp4')
     fps = cap.get(cv2.CAP_PROP_FPS)
     frameSum = cap.get(cv2.CAP_PROP_FRAME_COUNT)
     pauseTime = 1000/fps
+    # 当前帧数
+    frameNum = 0
     # 命名播放窗口标题
     cv2.namedWindow('CamshiftOBJTracking')
     # 调用鼠标回调函数
@@ -191,10 +192,10 @@ def OBJTracking():
             ret, track_window = cv2.CamShift(backProj, track_window, term_crit)
             x, y, w, h = track_window
             
-            # 记录时间
-            now = time.time()
+            # 记录帧数
+            frameNum += 1
             # camshift路径列表更新
-            CMSTrackPath.append([x + w // 2, y + h // 2,now])
+            CMSTrackPath.append([x + w // 2, y + h // 2, frameNum])
 
             # 卡尔曼滤波_预测
             statePre = kalman.predict()
@@ -206,7 +207,7 @@ def OBJTracking():
             # 获取校正后的位置坐标
             px, py = int(kalman.statePost[0]), int(kalman.statePost[1])
             # 优化camshift路径列表更新
-            ImpCMSTrackPath.append([px, py, now])
+            ImpCMSTrackPath.append([px, py, frameNum])
 
             # 绘制camshift捕获方框
             cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
