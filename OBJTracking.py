@@ -158,6 +158,7 @@ def OBJTracking():
                 # 归一化处理
                 roi_hist = cv2.normalize(roi_hist, roi_hist, 0, 255, cv2.NORM_MINMAX)
                 kalman.statePost[0], kalman.statePost[1] = xs + ws // 2, ys + hs // 2
+                # np.savetxt('data/roi_hist.txt', roi_hist, fmt='%f', delimiter=',')
                 # DrawROIColorHist(roi_hist)
                 trackObject = 1
             #region 遮挡判定
